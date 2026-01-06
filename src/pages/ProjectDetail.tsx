@@ -7,7 +7,6 @@ import { useTasks, useCreateTask, useUpdateTask, useDeleteTask, useToggleTask } 
 import { TaskList } from '../components/Task/TaskList';
 import { TaskForm } from '../components/Task/TaskForm';
 import { ProjectForm } from '../components/Project/ProjectForm';
-import { Header } from '../components/Layout/Header';
 import { Task, TaskFormData, ProjectFormData } from '../types';
 import dayjs from 'dayjs';
 
@@ -36,7 +35,6 @@ export function ProjectDetail() {
   if (projectLoading) {
     return (
       <div className="project-detail-page">
-        <Header />
         <main className="project-detail-main">
           <div className="loading-container">
             <Spin size="large" />
@@ -49,7 +47,6 @@ export function ProjectDetail() {
   if (!project) {
     return (
       <div className="project-detail-page">
-        <Header />
         <main className="project-detail-main">
           <div className="not-found">
             <Title level={3}>Project not found</Title>
@@ -159,7 +156,6 @@ export function ProjectDetail() {
 
   return (
     <div className="project-detail-page">
-      <Header />
       
       <main className="project-detail-main">
         <Breadcrumb

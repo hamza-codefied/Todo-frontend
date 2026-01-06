@@ -4,11 +4,15 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { MainLayout } from './components/Layout/MainLayout';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
+import { DashboardPage } from './pages/DashboardPage';
 import { Projects } from './pages/Projects';
 import { ProjectDetail } from './pages/ProjectDetail';
 import { TaskDetail } from './pages/TaskDetail';
+import { AllTasksPage } from './pages/AllTasksPage';
+import { AllTodosPage } from './pages/AllTodosPage';
 import './index.css';
 
 // Primary red color for the theme
@@ -66,11 +70,25 @@ function AppContent() {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            
+            {/* Protected Routes */}
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <MainLayout>
+                    <DashboardPage />
+                  </MainLayout>
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/projects"
               element={
                 <ProtectedRoute>
-                  <Projects />
+                  <MainLayout>
+                    <Projects />
+                  </MainLayout>
                 </ProtectedRoute>
               }
             />
@@ -78,7 +96,9 @@ function AppContent() {
               path="/projects/:id"
               element={
                 <ProtectedRoute>
-                  <ProjectDetail />
+                  <MainLayout>
+                    <ProjectDetail />
+                  </MainLayout>
                 </ProtectedRoute>
               }
             />
@@ -86,12 +106,35 @@ function AppContent() {
               path="/projects/:projectId/tasks/:taskId"
               element={
                 <ProtectedRoute>
-                  <TaskDetail />
+                  <MainLayout>
+                    <TaskDetail />
+                  </MainLayout>
                 </ProtectedRoute>
               }
             />
-            <Route path="/" element={<Navigate to="/projects" replace />} />
-            <Route path="*" element={<Navigate to="/projects" replace />} />
+            <Route
+              path="/tasks"
+              element={
+                <ProtectedRoute>
+                  <MainLayout>
+                    <AllTasksPage />
+                  </MainLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/todos"
+              element={
+                <ProtectedRoute>
+                  <MainLayout>
+                    <AllTodosPage />
+                  </MainLayout>
+                </ProtectedRoute>
+              }
+            />
+            
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </BrowserRouter>
       </AntApp>

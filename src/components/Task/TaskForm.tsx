@@ -1,18 +1,19 @@
 import { Form, Input, DatePicker, Select, Button, Space } from 'antd';
-import { Task, TaskFormData } from '../../types';
+import { Task, TaskFormData, Project } from '../../types';
 import dayjs from 'dayjs';
 
 const { TextArea } = Input;
 
 interface TaskFormProps {
-  projectId: string;
+  projectId?: string;
+  projects?: Project[];
   initialData?: Task;
   onSubmit: (data: TaskFormData) => void;
   onCancel: () => void;
   isLoading?: boolean;
 }
 
-export function TaskForm({ projectId, initialData, onSubmit, onCancel, isLoading }: TaskFormProps) {
+export function TaskForm({ projectId, projects, initialData, onSubmit, onCancel, isLoading }: TaskFormProps) {
   const [form] = Form.useForm();
 
   const handleFinish = (values: {
@@ -21,14 +22,19 @@ export function TaskForm({ projectId, initialData, onSubmit, onCancel, isLoading
     moduleName: string;
     dueDate: dayjs.Dayjs;
     priority?: string;
+    project?: string;
   }) => {
+    // If projectId prop is provided, use it. Otherwise, use the one from the form.
+    // We can assert ! here because of form validation rules.
+    const selectedProjectId = projectId || values.project!;
+
     onSubmit({
       name: values.name,
       description: values.description,
       moduleName: values.moduleName,
       dueDate: values.dueDate.toISOString(),
       priority: values.priority as 'low' | 'medium' | 'high' | undefined,
-      project: projectId,
+      project: selectedProjectId,
     });
   };
 
@@ -45,6 +51,9 @@ export function TaskForm({ projectId, initialData, onSubmit, onCancel, isLoading
               moduleName: initialData.moduleName,
               dueDate: dayjs(initialData.dueDate),
               priority: initialData.priority,
+              project: typeof initialData.project === 'string' 
+                ? initialData.project 
+                : initialData.project?._id,
             }
           : {
               priority: 'medium',
@@ -53,6 +62,20 @@ export function TaskForm({ projectId, initialData, onSubmit, onCancel, isLoading
       }
       className="task-form"
     >
+      {!projectId && projects && (
+        <Form.Item
+          name="project"
+          label="Project"
+          rules={[{ required: true, message: 'Please select a project' }]}
+        >
+          <Select
+            placeholder="Select a project"
+            size="large"
+            options={projects.map(p => ({ label: p.name, value: p._id }))}
+          />
+        </Form.Item>
+      )}
+
       <Form.Item
         name="name"
         label="Task Name"

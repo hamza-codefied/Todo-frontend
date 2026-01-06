@@ -5,7 +5,6 @@ import { PlusOutlined, FolderOutlined, CheckCircleOutlined, ClockCircleOutlined 
 import { useProjects, useCreateProject, useUpdateProject, useDeleteProject } from '../hooks/useProjects';
 import { ProjectList } from '../components/Project/ProjectList';
 import { ProjectForm } from '../components/Project/ProjectForm';
-import { Header } from '../components/Layout/Header';
 import { Project, ProjectFormData } from '../types';
 import { useAuth } from '../context/AuthContext';
 
@@ -77,8 +76,6 @@ export function Projects() {
 
   return (
     <div className="projects-page">
-      <Header />
-      
       <main className="projects-main">
         <div className="projects-header">
           <div className="projects-welcome">

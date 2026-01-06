@@ -1,12 +1,13 @@
 import { useEffect } from 'react';
-import { Todo, TodoFormData } from '../../types';
+import { Todo, TodoFormData, Task } from '../../types';
 import { Form, Input, Button, Select, DatePicker, Space, InputNumber } from 'antd';
 import dayjs from 'dayjs';
 
 const { TextArea } = Input;
 
 interface TodoFormProps {
-  taskId: string;
+  taskId?: string;
+  tasks?: Task[];
   initialData?: Todo;
   onSubmit: (data: TodoFormData) => void;
   onCancel: () => void;
@@ -20,15 +21,19 @@ interface FormValues {
   priority: 'low' | 'medium' | 'high';
   estimatedHours?: number;
   estimatedMinutes?: number;
+  task?: string;
 }
 
-export function TodoForm({ taskId, initialData, onSubmit, onCancel, isLoading }: TodoFormProps) {
+export function TodoForm({ taskId, tasks, initialData, onSubmit, onCancel, isLoading }: TodoFormProps) {
   const [form] = Form.useForm<FormValues>();
 
   useEffect(() => {
     if (initialData) {
       const hours = Math.floor(initialData.estimatedTime / 60);
       const minutes = initialData.estimatedTime % 60;
+      
+      const taskVal = typeof initialData.task === 'string' ? initialData.task : initialData.task?._id;
+
       form.setFieldsValue({
         title: initialData.title,
         description: initialData.description || '',
@@ -36,24 +41,34 @@ export function TodoForm({ taskId, initialData, onSubmit, onCancel, isLoading }:
         priority: initialData.priority,
         estimatedHours: hours || undefined,
         estimatedMinutes: minutes || undefined,
+        task: taskVal,
       });
     } else {
       form.setFieldsValue({
         dueDate: dayjs(),
         priority: 'medium',
+        task: taskId,
       });
     }
-  }, [initialData, form]);
+  }, [initialData, form, taskId]);
 
   const handleFinish = async (values: FormValues) => {
     const estimatedTime = ((values.estimatedHours || 0) * 60) + (values.estimatedMinutes || 0);
+    
+    const taskToSubmit = taskId || values.task;
+    
+    if (!taskToSubmit) {
+      // This should ideally be caught by form validation if tasks prop is present
+      return;
+    }
+
     await onSubmit({
       title: values.title,
       description: values.description || undefined,
       dueDate: values.dueDate.format('YYYY-MM-DD'),
       priority: values.priority,
       estimatedTime: estimatedTime > 0 ? estimatedTime : undefined,
-      task: taskId,
+      task: taskToSubmit,
     });
   };
 
@@ -65,6 +80,23 @@ export function TodoForm({ taskId, initialData, onSubmit, onCancel, isLoading }:
       className="todo-form"
       requiredMark={false}
     >
+      {tasks && tasks.length > 0 && (
+        <Form.Item
+          name="task"
+          label="Task"
+          rules={[{ required: true, message: 'Please select a task' }]}
+        >
+          <Select 
+            placeholder="Select a task"
+            options={tasks.map(t => ({ value: t._id, label: t.name }))}
+            showSearch
+            filterOption={(input, option) =>
+              (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+            }
+          />
+        </Form.Item>
+      )}
+
       <Form.Item
         name="title"
         label="Title"

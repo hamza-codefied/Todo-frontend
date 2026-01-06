@@ -7,7 +7,6 @@ import { useTodos, useCreateTodo, useUpdateTodo, useDeleteTodo, useToggleTodo } 
 import { TodoList } from '../components/Todo/TodoList';
 import { TodoForm } from '../components/Todo/TodoForm';
 import { TaskForm } from '../components/Task/TaskForm';
-import { Header } from '../components/Layout/Header';
 import { Todo, TodoFormData, TaskFormData } from '../types';
 import dayjs from 'dayjs';
 
@@ -37,7 +36,6 @@ export function TaskDetail() {
   if (taskLoading) {
     return (
       <div className="task-detail-page">
-        <Header />
         <main className="task-detail-main">
           <div className="loading-container">
             <Spin size="large" />
@@ -50,7 +48,6 @@ export function TaskDetail() {
   if (!task) {
     return (
       <div className="task-detail-page">
-        <Header />
         <main className="task-detail-main">
           <div className="not-found">
             <Title level={3}>Task not found</Title>
@@ -187,7 +184,6 @@ export function TaskDetail() {
 
   return (
     <div className="task-detail-page">
-      <Header />
       
       <main className="task-detail-main">
         <Breadcrumb
