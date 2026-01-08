@@ -1,17 +1,20 @@
-import { useQuery } from '@tanstack/react-query';
-import { Card, Row, Col, Typography, Spin, Progress, Empty } from 'antd';
-import { 
-  ProjectOutlined, 
-  UnorderedListOutlined, 
+import { useQuery } from "@tanstack/react-query";
+import { Card, Row, Col, Typography, Spin, Empty, Statistic } from "antd";
+import { Pie, Column, Liquid } from "@ant-design/charts";
+import {
+  ProjectOutlined,
+  UnorderedListOutlined,
   CheckSquareOutlined,
   RiseOutlined,
   ClockCircleOutlined,
   CheckCircleOutlined,
   ExclamationCircleOutlined,
-  FireOutlined
-} from '@ant-design/icons';
-import { useAuth } from '../context/AuthContext';
-import { statsService, DashboardStats } from '../services/statsService';
+  FireOutlined,
+  TrophyOutlined,
+  ThunderboltOutlined,
+} from "@ant-design/icons";
+import { useAuth } from "../context/AuthContext";
+import { statsService, DashboardStats } from "../services/statsService";
 
 const { Title, Text } = Typography;
 
@@ -19,7 +22,7 @@ export function DashboardPage() {
   const { user } = useAuth();
 
   const { data: stats, isLoading } = useQuery<DashboardStats>({
-    queryKey: ['stats'],
+    queryKey: ["stats"],
     queryFn: statsService.getStats,
   });
 
@@ -39,138 +42,311 @@ export function DashboardPage() {
     );
   }
 
-  const totalItems = stats.projects.total + stats.tasks.total + stats.todos.total;
+  // Calculate totals
+  const totalItems =
+    stats.projects.total + stats.tasks.total + stats.todos.total;
+  const totalCompleted =
+    stats.tasks.completed + stats.todos.completed + stats.projects.completed;
+  const overallCompletionRate =
+    totalItems > 0
+      ? Math.round(
+          (totalCompleted /
+            (stats.tasks.total + stats.todos.total + stats.projects.total)) *
+            100
+        )
+      : 0;
+
+  // Pie chart data for work distribution
+  const workDistributionData = [
+    { type: "Projects", value: stats.projects.total, color: "#1890ff" },
+    { type: "Tasks", value: stats.tasks.total, color: "#52c41a" },
+    { type: "Todos", value: stats.todos.total, color: "#722ed1" },
+  ];
+
+  // Pie chart for task priority distribution
+  const taskPriorityData = [
+    {
+      type: "High",
+      value: stats.tasks.priorityDistribution.high,
+      color: "#ff4d4f",
+    },
+    {
+      type: "Medium",
+      value: stats.tasks.priorityDistribution.medium,
+      color: "#faad14",
+    },
+    {
+      type: "Low",
+      value: stats.tasks.priorityDistribution.low,
+      color: "#52c41a",
+    },
+  ];
+
+  // Column chart for project status
+  const projectStatusData = [
+    {
+      status: "Active",
+      count: stats.projects.statusDistribution.active,
+      color: "#1890ff",
+    },
+    {
+      status: "Completed",
+      count: stats.projects.statusDistribution.completed,
+      color: "#52c41a",
+    },
+    {
+      status: "On Hold",
+      count: stats.projects.statusDistribution.onHold,
+      color: "#faad14",
+    },
+  ];
+
+  // Recent activity data for column chart
+  const recentActivityData = [
+    {
+      type: "Projects",
+      count: stats.recentActivity.projects,
+      category: "Last 7 Days",
+    },
+    {
+      type: "Tasks",
+      count: stats.recentActivity.tasks,
+      category: "Last 7 Days",
+    },
+    {
+      type: "Todos",
+      count: stats.recentActivity.todos,
+      category: "Last 7 Days",
+    },
+  ];
+
+  // Pie chart config for work distribution
+  const workDistributionConfig = {
+    data: workDistributionData,
+    angleField: "value",
+    colorField: "type",
+    radius: 0.8,
+    innerRadius: 0.6,
+    legend: {
+      position: "bottom" as const,
+    },
+    label: {
+      type: "inner" as const,
+      content: "{percentage}",
+      style: { fontSize: 12, fill: "#fff" },
+    },
+    color: ["#1890ff", "#52c41a", "#722ed1"],
+    statistic: {
+      title: {
+        content: "Total",
+        style: { fontSize: "14px", color: "var(--text-secondary)" },
+      },
+      content: {
+        content: totalItems.toString(),
+        style: {
+          fontSize: "24px",
+          fontWeight: "bold",
+          color: "var(--text-color)",
+        },
+      },
+    },
+  };
+
+  // Pie chart config for task priority
+  const taskPriorityConfig = {
+    data: taskPriorityData,
+    angleField: "value",
+    colorField: "type",
+    radius: 0.9,
+    legend: {
+      position: "bottom" as const,
+    },
+    label: {
+      type: "spider" as const,
+      content: "{name}: {value}",
+    },
+    color: ["#ff4d4f", "#faad14", "#52c41a"],
+  };
+
+  // Column chart config for project status
+  const projectStatusConfig = {
+    data: projectStatusData,
+    xField: "status",
+    yField: "count",
+    colorField: "status",
+    color: ["#1890ff", "#52c41a", "#faad14"],
+    legend: false as const,
+    label: {
+      position: "top" as const,
+      style: { fill: "var(--text-color)" },
+    },
+    columnStyle: {
+      radius: [8, 8, 0, 0],
+    },
+  };
+
+  // Recent activity column chart config
+  const recentActivityConfig = {
+    data: recentActivityData,
+    xField: "type",
+    yField: "count",
+    colorField: "type",
+    color: ["#1890ff", "#52c41a", "#722ed1"],
+    legend: false as const,
+    label: {
+      position: "top" as const,
+      style: { fill: "var(--text-color)" },
+    },
+    columnStyle: {
+      radius: [8, 8, 0, 0],
+    },
+  };
+
+  // Liquid chart config for overall completion
+  const liquidConfig = {
+    percent: overallCompletionRate / 100,
+    outline: {
+      border: 3,
+      distance: 4,
+    },
+    wave: {
+      length: 128,
+    },
+    color:
+      overallCompletionRate >= 75
+        ? "#52c41a"
+        : overallCompletionRate >= 50
+        ? "#1890ff"
+        : overallCompletionRate >= 25
+        ? "#faad14"
+        : "#ff4d4f",
+  };
 
   return (
     <div className="dashboard-page">
-      <div className="page-header">
-        <div className="page-title-section">
-          <Title level={2} style={{ margin: 0 }}>Dashboard</Title>
-          <Text type="secondary">Welcome back, {user?.name}! Here's your overview.</Text>
+      {/* Welcome Header */}
+      <div className="dashboard-welcome-header">
+        <div className="welcome-content">
+          <Title level={2} style={{ margin: 0 }}>
+            Welcome back, {user?.name}! 👋
+          </Title>
+          <Text type="secondary" className="welcome-subtitle">
+            Here's an overview of your productivity stats
+          </Text>
+        </div>
+        <div className="welcome-date">
+          <Text type="secondary">
+            {new Date().toLocaleDateString("en-US", {
+              weekday: "long",
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })}
+          </Text>
         </div>
       </div>
 
-      {/* Overview Stats Cards */}
-      <Row gutter={[16, 16]} className="overview-cards">
-        <Col xs={24} sm={8}>
-          <Card className="stat-card overview-card projects-card">
-            <div className="stat-card-content">
-              <div className="stat-icon-wrapper projects-icon">
+      {/* Quick Stats Cards */}
+      <Row gutter={[24, 24]} className="stats-row">
+        <Col xs={24} sm={12} lg={6}>
+          <Card className="quick-stat-card projects-gradient" bordered={false}>
+            <div className="quick-stat-content">
+              <div className="quick-stat-icon">
                 <ProjectOutlined />
               </div>
-              <div className="stat-details">
-                <Text type="secondary">Total Projects</Text>
-                <Title level={2} style={{ margin: 0 }}>{stats.projects.total}</Title>
-                <div className="stat-sub">
-                  <span className="stat-badge active">{stats.projects.active} Active</span>
+              <div className="quick-stat-info">
+                <Statistic
+                  title={
+                    <span className="stat-title-white">Total Projects</span>
+                  }
+                  value={stats.projects.total}
+                  valueStyle={{
+                    color: "#fff",
+                    fontSize: "32px",
+                    fontWeight: 700,
+                  }}
+                />
+                <div className="quick-stat-sub">
+                  <span className="stat-mini-badge">
+                    {stats.projects.active} Active
+                  </span>
                 </div>
               </div>
             </div>
           </Card>
         </Col>
-        <Col xs={24} sm={8}>
-          <Card className="stat-card overview-card tasks-card">
-            <div className="stat-card-content">
-              <div className="stat-icon-wrapper tasks-icon">
+        <Col xs={24} sm={12} lg={6}>
+          <Card className="quick-stat-card tasks-gradient" bordered={false}>
+            <div className="quick-stat-content">
+              <div className="quick-stat-icon">
                 <UnorderedListOutlined />
               </div>
-              <div className="stat-details">
-                <Text type="secondary">Total Tasks</Text>
-                <Title level={2} style={{ margin: 0 }}>{stats.tasks.total}</Title>
-                <div className="stat-sub">
-                  <span className="stat-badge success">{stats.tasks.completed} Done</span>
-                  <span className="stat-badge warning">{stats.tasks.pending} Pending</span>
+              <div className="quick-stat-info">
+                <Statistic
+                  title={<span className="stat-title-white">Total Tasks</span>}
+                  value={stats.tasks.total}
+                  valueStyle={{
+                    color: "#fff",
+                    fontSize: "32px",
+                    fontWeight: 700,
+                  }}
+                />
+                <div className="quick-stat-sub">
+                  <span className="stat-mini-badge">
+                    {stats.tasks.completed} Completed
+                  </span>
                 </div>
               </div>
             </div>
           </Card>
         </Col>
-        <Col xs={24} sm={8}>
-          <Card className="stat-card overview-card todos-card">
-            <div className="stat-card-content">
-              <div className="stat-icon-wrapper todos-icon">
+        <Col xs={24} sm={12} lg={6}>
+          <Card className="quick-stat-card todos-gradient" bordered={false}>
+            <div className="quick-stat-content">
+              <div className="quick-stat-icon">
                 <CheckSquareOutlined />
               </div>
-              <div className="stat-details">
-                <Text type="secondary">Total Todos</Text>
-                <Title level={2} style={{ margin: 0 }}>{stats.todos.total}</Title>
-                <div className="stat-sub">
-                  <span className="stat-badge success">{stats.todos.completed} Done</span>
-                  <span className="stat-badge warning">{stats.todos.pending} Pending</span>
-                </div>
-              </div>
-            </div>
-          </Card>
-        </Col>
-      </Row>
-
-      {/* Completion Rates */}
-      <Row gutter={[16, 16]} className="completion-section">
-        <Col xs={24} lg={12}>
-          <Card className="chart-card" title={<><RiseOutlined /> Completion Rates</>}>
-            <div className="completion-rates">
-              <div className="completion-item">
-                <div className="completion-header">
-                  <Text>Tasks Completion</Text>
-                  <Text strong>{stats.completionRate.tasks}%</Text>
-                </div>
-                <Progress 
-                  percent={stats.completionRate.tasks} 
-                  strokeColor={{
-                    '0%': '#108ee9',
-                    '100%': '#87d068',
+              <div className="quick-stat-info">
+                <Statistic
+                  title={<span className="stat-title-white">Total Todos</span>}
+                  value={stats.todos.total}
+                  valueStyle={{
+                    color: "#fff",
+                    fontSize: "32px",
+                    fontWeight: 700,
                   }}
-                  trailColor="var(--border-color)"
-                  showInfo={false}
                 />
-              </div>
-              <div className="completion-item">
-                <div className="completion-header">
-                  <Text>Todos Completion</Text>
-                  <Text strong>{stats.completionRate.todos}%</Text>
+                <div className="quick-stat-sub">
+                  <span className="stat-mini-badge">
+                    {stats.todos.completed} Completed
+                  </span>
                 </div>
-                <Progress 
-                  percent={stats.completionRate.todos} 
-                  strokeColor={{
-                    '0%': '#722ed1',
-                    '100%': '#eb2f96',
+              </div>
+            </div>
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <Card className="quick-stat-card danger-gradient" bordered={false}>
+            <div className="quick-stat-content">
+              <div className="quick-stat-icon">
+                <ExclamationCircleOutlined />
+              </div>
+              <div className="quick-stat-info">
+                <Statistic
+                  title={
+                    <span className="stat-title-white">Overdue Items</span>
+                  }
+                  value={stats.tasks.overdue + stats.todos.overdue}
+                  valueStyle={{
+                    color: "#fff",
+                    fontSize: "32px",
+                    fontWeight: 700,
                   }}
-                  trailColor="var(--border-color)"
-                  showInfo={false}
                 />
-              </div>
-            </div>
-          </Card>
-        </Col>
-
-        <Col xs={24} lg={12}>
-          <Card className="chart-card" title={<><ClockCircleOutlined /> Recent Activity (Last 7 Days)</>}>
-            <div className="recent-activity">
-              <div className="activity-item">
-                <div className="activity-icon projects-icon">
-                  <ProjectOutlined />
-                </div>
-                <div className="activity-info">
-                  <Text type="secondary">New Projects</Text>
-                  <Title level={4} style={{ margin: 0 }}>{stats.recentActivity.projects}</Title>
-                </div>
-              </div>
-              <div className="activity-item">
-                <div className="activity-icon tasks-icon">
-                  <UnorderedListOutlined />
-                </div>
-                <div className="activity-info">
-                  <Text type="secondary">New Tasks</Text>
-                  <Title level={4} style={{ margin: 0 }}>{stats.recentActivity.tasks}</Title>
-                </div>
-              </div>
-              <div className="activity-item">
-                <div className="activity-icon todos-icon">
-                  <CheckSquareOutlined />
-                </div>
-                <div className="activity-info">
-                  <Text type="secondary">New Todos</Text>
-                  <Title level={4} style={{ margin: 0 }}>{stats.recentActivity.todos}</Title>
+                <div className="quick-stat-sub">
+                  <span className="stat-mini-badge">
+                    {stats.tasks.overdue} Tasks • {stats.todos.overdue} Todos
+                  </span>
                 </div>
               </div>
             </div>
@@ -178,145 +354,226 @@ export function DashboardPage() {
         </Col>
       </Row>
 
-      {/* Priority Distribution and Status */}
-      <Row gutter={[16, 16]} className="distribution-section">
-        <Col xs={24} md={12} lg={8}>
-          <Card className="chart-card" title={<><FireOutlined /> Task Priority</>}>
-            <div className="priority-chart">
-              <div className="priority-bar-container">
-                <div 
-                  className="priority-bar high" 
-                  style={{ width: `${stats.tasks.total > 0 ? (stats.tasks.priorityDistribution.high / stats.tasks.total) * 100 : 0}%` }}
-                />
-                <div 
-                  className="priority-bar medium" 
-                  style={{ width: `${stats.tasks.total > 0 ? (stats.tasks.priorityDistribution.medium / stats.tasks.total) * 100 : 0}%` }}
-                />
-                <div 
-                  className="priority-bar low" 
-                  style={{ width: `${stats.tasks.total > 0 ? (stats.tasks.priorityDistribution.low / stats.tasks.total) * 100 : 0}%` }}
-                />
+      {/* Charts Section - Row 1 */}
+      <Row gutter={[24, 24]} className="charts-row">
+        {/* Overall Completion Gauge */}
+        <Col xs={24} md={8}>
+          <Card
+            className="chart-card glass-card"
+            title={
+              <div className="chart-title">
+                <TrophyOutlined className="chart-title-icon trophy" />
+                <span>Overall Completion</span>
               </div>
-              <div className="priority-legend">
-                <div className="legend-item">
-                  <span className="legend-dot high"></span>
-                  <Text>High ({stats.tasks.priorityDistribution.high})</Text>
-                </div>
-                <div className="legend-item">
-                  <span className="legend-dot medium"></span>
-                  <Text>Medium ({stats.tasks.priorityDistribution.medium})</Text>
-                </div>
-                <div className="legend-item">
-                  <span className="legend-dot low"></span>
-                  <Text>Low ({stats.tasks.priorityDistribution.low})</Text>
-                </div>
+            }
+          >
+            <div className="liquid-chart-container">
+              <Liquid {...liquidConfig} height={200} />
+              <div className="completion-label">
+                <Text type="secondary">Keep going! You're doing great.</Text>
               </div>
             </div>
           </Card>
         </Col>
 
-        <Col xs={24} md={12} lg={8}>
-          <Card className="chart-card" title={<><CheckCircleOutlined /> Project Status</>}>
-            <div className="status-chart">
-              <div className="status-items">
-                <div className="status-item">
-                  <div className="status-circle active-circle">
-                    <span>{stats.projects.statusDistribution.active}</span>
-                  </div>
-                  <Text type="secondary">Active</Text>
-                </div>
-                <div className="status-item">
-                  <div className="status-circle completed-circle">
-                    <span>{stats.projects.statusDistribution.completed}</span>
-                  </div>
-                  <Text type="secondary">Completed</Text>
-                </div>
-                <div className="status-item">
-                  <div className="status-circle onhold-circle">
-                    <span>{stats.projects.statusDistribution.onHold}</span>
-                  </div>
-                  <Text type="secondary">On Hold</Text>
-                </div>
+        {/* Work Distribution Donut Chart */}
+        <Col xs={24} md={8}>
+          <Card
+            className="chart-card glass-card"
+            title={
+              <div className="chart-title">
+                <RiseOutlined className="chart-title-icon rise" />
+                <span>Work Distribution</span>
               </div>
-            </div>
+            }
+          >
+            {totalItems > 0 ? (
+              <Pie {...workDistributionConfig} height={250} />
+            ) : (
+              <Empty description="No items yet" className="chart-empty" />
+            )}
           </Card>
         </Col>
 
-        <Col xs={24} md={24} lg={8}>
-          <Card className="chart-card" title={<><ExclamationCircleOutlined /> Overdue Items</>}>
-            <div className="overdue-section">
-              <div className="overdue-item">
-                <div className="overdue-icon tasks">
-                  <UnorderedListOutlined />
-                </div>
-                <div className="overdue-info">
-                  <Title level={3} style={{ margin: 0, color: stats.tasks.overdue > 0 ? '#ff4d4f' : 'inherit' }}>
-                    {stats.tasks.overdue}
-                  </Title>
-                  <Text type="secondary">Overdue Tasks</Text>
-                </div>
+        {/* Task Priority Distribution */}
+        <Col xs={24} md={8}>
+          <Card
+            className="chart-card glass-card"
+            title={
+              <div className="chart-title">
+                <FireOutlined className="chart-title-icon fire" />
+                <span>Task Priority</span>
               </div>
-              <div className="overdue-item">
-                <div className="overdue-icon todos">
-                  <CheckSquareOutlined />
-                </div>
-                <div className="overdue-info">
-                  <Title level={3} style={{ margin: 0, color: stats.todos.overdue > 0 ? '#ff4d4f' : 'inherit' }}>
-                    {stats.todos.overdue}
-                  </Title>
-                  <Text type="secondary">Overdue Todos</Text>
-                </div>
-              </div>
-            </div>
+            }
+          >
+            {stats.tasks.total > 0 ? (
+              <Pie {...taskPriorityConfig} height={250} />
+            ) : (
+              <Empty description="No tasks yet" className="chart-empty" />
+            )}
           </Card>
         </Col>
       </Row>
 
-      {/* Work Distribution Chart */}
-      <Row gutter={[16, 16]} className="work-distribution-section">
-        <Col xs={24}>
-          <Card className="chart-card" title="Work Distribution">
-            <div className="work-distribution">
-              {totalItems > 0 ? (
-                <>
-                  <div className="distribution-visual">
-                    <div 
-                      className="distribution-segment projects"
-                      style={{ width: `${(stats.projects.total / totalItems) * 100}%` }}
-                    >
-                      <span className="segment-value">{stats.projects.total}</span>
-                    </div>
-                    <div 
-                      className="distribution-segment tasks"
-                      style={{ width: `${(stats.tasks.total / totalItems) * 100}%` }}
-                    >
-                      <span className="segment-value">{stats.tasks.total}</span>
-                    </div>
-                    <div 
-                      className="distribution-segment todos"
-                      style={{ width: `${(stats.todos.total / totalItems) * 100}%` }}
-                    >
-                      <span className="segment-value">{stats.todos.total}</span>
-                    </div>
+      {/* Charts Section - Row 2 */}
+      <Row gutter={[24, 24]} className="charts-row">
+        {/* Project Status Bar Chart */}
+        <Col xs={24} md={12}>
+          <Card
+            className="chart-card glass-card"
+            title={
+              <div className="chart-title">
+                <CheckCircleOutlined className="chart-title-icon check" />
+                <span>Project Status</span>
+              </div>
+            }
+          >
+            {stats.projects.total > 0 ? (
+              <Column {...projectStatusConfig} height={250} />
+            ) : (
+              <Empty description="No projects yet" className="chart-empty" />
+            )}
+          </Card>
+        </Col>
+
+        {/* Recent Activity */}
+        <Col xs={24} md={12}>
+          <Card
+            className="chart-card glass-card"
+            title={
+              <div className="chart-title">
+                <ClockCircleOutlined className="chart-title-icon clock" />
+                <span>Recent Activity (Last 7 Days)</span>
+              </div>
+            }
+          >
+            <Column {...recentActivityConfig} height={250} />
+          </Card>
+        </Col>
+      </Row>
+
+      {/* Completion Rates Section */}
+      <Row gutter={[24, 24]} className="charts-row">
+        <Col xs={24} md={12}>
+          <Card
+            className="chart-card glass-card completion-card"
+            title={
+              <div className="chart-title">
+                <ThunderboltOutlined className="chart-title-icon thunder" />
+                <span>Completion Rates</span>
+              </div>
+            }
+          >
+            <div className="completion-rates-modern">
+              <div className="completion-rate-item">
+                <div className="rate-info">
+                  <div className="rate-label">
+                    <UnorderedListOutlined className="rate-icon tasks" />
+                    <Text>Tasks Completion</Text>
                   </div>
-                  <div className="distribution-legend">
-                    <div className="legend-item">
-                      <span className="legend-dot projects"></span>
-                      <Text>Projects ({Math.round((stats.projects.total / totalItems) * 100)}%)</Text>
-                    </div>
-                    <div className="legend-item">
-                      <span className="legend-dot tasks"></span>
-                      <Text>Tasks ({Math.round((stats.tasks.total / totalItems) * 100)}%)</Text>
-                    </div>
-                    <div className="legend-item">
-                      <span className="legend-dot todos"></span>
-                      <Text>Todos ({Math.round((stats.todos.total / totalItems) * 100)}%)</Text>
-                    </div>
+                  <Text strong className="rate-value">
+                    {stats.completionRate.tasks}%
+                  </Text>
+                </div>
+                <div className="rate-bar-container">
+                  <div
+                    className="rate-bar tasks-bar"
+                    style={{ width: `${stats.completionRate.tasks}%` }}
+                  />
+                </div>
+                <div className="rate-details">
+                  <Text type="secondary">
+                    {stats.tasks.completed} of {stats.tasks.total} completed
+                  </Text>
+                </div>
+              </div>
+
+              <div className="completion-rate-item">
+                <div className="rate-info">
+                  <div className="rate-label">
+                    <CheckSquareOutlined className="rate-icon todos" />
+                    <Text>Todos Completion</Text>
                   </div>
-                </>
-              ) : (
-                <Empty description="No items to display" />
-              )}
+                  <Text strong className="rate-value">
+                    {stats.completionRate.todos}%
+                  </Text>
+                </div>
+                <div className="rate-bar-container">
+                  <div
+                    className="rate-bar todos-bar"
+                    style={{ width: `${stats.completionRate.todos}%` }}
+                  />
+                </div>
+                <div className="rate-details">
+                  <Text type="secondary">
+                    {stats.todos.completed} of {stats.todos.total} completed
+                  </Text>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </Col>
+
+        {/* Productivity Summary */}
+        <Col xs={24} md={12}>
+          <Card
+            className="chart-card glass-card summary-card"
+            title={
+              <div className="chart-title">
+                <ProjectOutlined className="chart-title-icon project" />
+                <span>Productivity Summary</span>
+              </div>
+            }
+          >
+            <div className="summary-grid">
+              <div className="summary-item">
+                <div className="summary-icon pending">
+                  <ClockCircleOutlined />
+                </div>
+                <div className="summary-info">
+                  <Text className="summary-value">{stats.tasks.pending}</Text>
+                  <Text type="secondary" className="summary-label">
+                    Pending Tasks
+                  </Text>
+                </div>
+              </div>
+              <div className="summary-item">
+                <div className="summary-icon pending">
+                  <ClockCircleOutlined />
+                </div>
+                <div className="summary-info">
+                  <Text className="summary-value">{stats.todos.pending}</Text>
+                  <Text type="secondary" className="summary-label">
+                    Pending Todos
+                  </Text>
+                </div>
+              </div>
+              <div className="summary-item">
+                <div className="summary-icon high">
+                  <FireOutlined />
+                </div>
+                <div className="summary-info">
+                  <Text className="summary-value">
+                    {stats.tasks.priorityDistribution.high}
+                  </Text>
+                  <Text type="secondary" className="summary-label">
+                    High Priority
+                  </Text>
+                </div>
+              </div>
+              <div className="summary-item">
+                <div className="summary-icon completed">
+                  <CheckCircleOutlined />
+                </div>
+                <div className="summary-info">
+                  <Text className="summary-value">
+                    {stats.projects.completed}
+                  </Text>
+                  <Text type="secondary" className="summary-label">
+                    Projects Done
+                  </Text>
+                </div>
+              </div>
             </div>
           </Card>
         </Col>
